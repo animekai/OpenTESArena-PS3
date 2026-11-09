@@ -13,7 +13,7 @@ Que Arena corra de forma nativa en una PS3 con firmware personalizado, usando el
 | Etapa | Descripción | Estado |
 |---|---|---|
 | 0 | Toolchain PSL1GHT en WSL, "Hello World" y gráficos de prueba en el emulador RPCS3 | Hecho |
-| 1 | Cargar con las clases del motor (VFS, BSA, IMG, COL) la pantalla de título de Arena y mostrarla con SDL2 | En curso |
+| 1 | Cargar con las clases del motor (VFS, BSA, IMG, COL) la pantalla de título de Arena y mostrarla con SDL2 | Hecho (en RPCS3) |
 | 2 | Renderer por software del motor sobre SDL2 en PS3 | Pendiente |
 | 3 | Sustituir Jolt Physics por un sistema de colisiones simple | Pendiente |
 | 4 | Entrada con mando, audio y menús | Pendiente |
