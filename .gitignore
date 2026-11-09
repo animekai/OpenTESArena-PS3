@@ -1,0 +1,13 @@
+datos/
+*.BSA
+*.bsa
+*.INF
+*.MIF
+*.EXE
+build/
+*.elf
+*.self
+*.pkg
+juego-original/
+*.bak
+ps3/pruebas/
