@@ -15,7 +15,7 @@ CONTENTID := UP0001-$(APPID)_00-0000000000000000
 SRCDIRS := source compat $(ENGINE)/OpenTESArena/src/World $(ENGINE)/OpenTESArena/src/Voxels $(ENGINE)/OpenTESArena/src/Rendering $(ENGINE)/OpenTESArena/src/Math $(ENGINE)/components/vfs $(ENGINE)/components/archives \
   $(ENGINE)/components/debug $(ENGINE)/components/utilities \
   $(ENGINE)/OpenTESArena/src/Assets $(ENGINE)/OpenTESArena/src/Utilities
-CPPLIST := main.cpp engine_stubs.cpp ChunkUtils.cpp Vector3.cpp Vector2.cpp VoxelUtils.cpp MathUtils.cpp ArenaMathUtils.cpp TextureBuilder.cpp SoftwareRenderer.cpp BoundingBox.cpp Matrix4.cpp RenderBuffer.cpp RenderTextureUtils.cpp RenderCamera.cpp RenderDrawCommand.cpp RenderBackend.cpp RendererUtils.cpp Platform.cpp ps3_stubs.cpp Random.cpp manager.cpp archive.cpp bsaarchive.cpp Debug.cpp Bytes.cpp \
+CPPLIST := main.cpp RenderDrawCall.cpp RenderFrameSettings.cpp RenderInitSettings.cpp RenderMaterialUtils.cpp scene_setup.cpp LGTFile.cpp scene_setup.cpp LGTFile.cpp engine_stubs.cpp ChunkUtils.cpp Vector3.cpp Vector2.cpp VoxelUtils.cpp MathUtils.cpp ArenaMathUtils.cpp TextureBuilder.cpp SoftwareRenderer.cpp BoundingBox.cpp Matrix4.cpp RenderBuffer.cpp RenderTextureUtils.cpp RenderCamera.cpp RenderDrawCommand.cpp RenderBackend.cpp RendererUtils.cpp Platform.cpp ps3_stubs.cpp Random.cpp manager.cpp archive.cpp bsaarchive.cpp Debug.cpp Bytes.cpp \
   Directory.cpp File.cpp Path.cpp String.cpp IMGFile.cpp COLFile.cpp \
   Compression.cpp Color.cpp
 INCLUDES := compat $(ENGINE) $(ENGINE)/OpenTESArena/src $(ENGINE)/OpenTESArena/src/Rendering

@@ -1,82 +1,51 @@
 #include <cstdio>
-#include <cstdint>
 #include <string>
 #include <vector>
 #include <SDL.h>
-
 #include "components/vfs/manager.hpp"
-#include "Assets/IMGFile.h"
-#include "Assets/COLFile.h"
+#include "frame_test.h"
+#include "Rendering/RenderInitSettings.h"
 
 int main(int argc, char *argv[])
 {
     setvbuf(stdout, nullptr, _IONBF, 0);
-    printf("Arena PS3 etapa1: inicio\n");
-
-    if (SDL_Init(SDL_INIT_VIDEO) != 0)
-    {
-        printf("SDL_Init fallo: %s\n", SDL_GetError());
-        return 1;
-    }
-    printf("SDL_Init ok\n");
-
+    printf("Arena PS3 etapa2: inicio\n");
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) { printf("SDL_Init fallo\n"); return 1; }
     SDL_Window *window = SDL_CreateWindow("Arena", 0, 0, 1280, 720, 0);
-    printf("ventana: %p\n", (void*)window);
-    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
-    printf("renderer: %p\n", (void*)renderer);
-    if (window == nullptr || renderer == nullptr)
-    {
-        printf("Ventana/renderer fallo: %s\n", SDL_GetError());
-        return 1;
-    }
-
+    SDL_Renderer *sdl = SDL_CreateRenderer(window, -1, 0);
     VFS::Manager::get().initialize(std::string("/dev_hdd0/ARENA"));
-    printf("VFS inicializado\n");
+    printf("VFS ok\n");
 
-    IMGFile img;
-    COLFile col;
-    const bool okImg = img.init("TITLE.IMG");
-    const bool okCol = col.init("PAL.COL");
-    printf("TITLE.IMG: %d, PAL.COL: %d\n", okImg, okCol);
+    constexpr int W = 320, H = 200;
+    SoftwareRenderer renderer;
+    RenderInitSettings init;
+    init.init(nullptr, "", [](const Window*) { return Int2(W, H); }, 1, DitheringMode::None);
+    if (!renderer.init(init)) { printf("renderer.init fallo\n"); return 1; }
+    printf("renderer ok\n");
 
-    SDL_Texture *texture = nullptr;
-    if (okImg && okCol)
-    {
-        const int w = img.getWidth();
-        const int h = img.getHeight();
-        printf("Imagen %dx%d\n", w, h);
+    TestScene scene;
+    if (!buildTestScene(renderer, scene)) { printf("escena fallo\n"); return 1; }
 
-        const Palette &pal = col.getPalette();
-        const uint8_t *src = img.getPixels();
-        std::vector<uint32_t> pixels(w * h);
-        for (int i = 0; i < w * h; i++)
-        {
-            const Color &c = pal[src[i]];
-            pixels[i] = (0xFFu << 24) | (c.r << 16) | (c.g << 8) | c.b;
-        }
-
-        texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
-            SDL_TEXTUREACCESS_STATIC, w, h);
-        if (texture != nullptr)
-            SDL_UpdateTexture(texture, nullptr, pixels.data(), w * 4);
-        printf("textura: %p\n", (void*)texture);
-    }
-
-    int frames = 0;
+    SDL_Texture *tex = SDL_CreateTexture(sdl, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, W, H);
+    std::vector<uint32_t> out(W * H, 0);
+    int frame = 0;
     bool running = true;
     while (running)
     {
         SDL_Event e;
-        while (SDL_PollEvent(&e))
-            if (e.type == SDL_QUIT) running = false;
+        while (SDL_PollEvent(&e)) if (e.type == SDL_QUIT) running = false;
 
-        if (texture != nullptr) SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        else SDL_SetRenderDrawColor(renderer, 200, 0, 0, 255); // rojo = fallo de carga
-        SDL_RenderClear(renderer);
-        if (texture != nullptr) SDL_RenderCopy(renderer, texture, nullptr, nullptr);
-        SDL_RenderPresent(renderer);
-        SDL_Delay(16);
-        if (++frames % 120 == 0) printf("frame %d\n", frames);
+        const double yaw = (frame % 360) * 1.0;
+        const Uint32 t0 = SDL_GetTicks();
+        renderTestFrame(renderer, scene, yaw, out.data());
+        const Uint32 t1 = SDL_GetTicks();
+
+        SDL_UpdateTexture(tex, nullptr, out.data(), W * 4);
+        SDL_RenderClear(sdl);
+        SDL_RenderCopy(sdl, tex, nullptr, nullptr);
+        SDL_RenderPresent(sdl);
+        if (frame % 30 == 0) printf("frame %d yaw %.0f submitFrame %u ms\n", frame, yaw, (unsigned)(t1 - t0));
+        frame++;
     }
     return 0;
 }
