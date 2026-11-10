@@ -64,9 +64,15 @@ bool buildTestScene(SoftwareRenderer &r, TestScene &scene)
     lb = r.lockIndexBuffer(idxBuf); std::memcpy(lb.bytes.begin(), idx, sizeof(idx)); r.unlockIndexBuffer(idxBuf);
 
     // Transformacion (identidad) y buffer de luces (vacio).
-    const UniformBufferID xfBuf = r.createUniformBuffer(1, sizeof(Matrix4d), alignof(Matrix4d));
-    const Matrix4d identity = Matrix4d::identity();
-    lb = r.lockUniformBuffer(xfBuf); std::memcpy(lb.bytes.begin(), &identity, sizeof(Matrix4d)); r.unlockUniformBuffer(xfBuf);
+    constexpr int STRESS_N = 200;
+    const UniformBufferID xfBuf = r.createUniformBuffer(STRESS_N, sizeof(Matrix4d), alignof(Matrix4d));
+    for (int i = 0; i < STRESS_N; i++)
+    {
+        const Matrix4d m = Matrix4d::translation(i * 0.02, 0.0, 0.0);
+        lb = r.lockUniformBufferIndex(xfBuf, i);
+        std::memcpy(lb.bytes.begin(), &m, sizeof(Matrix4d));
+        r.unlockUniformBufferIndex(xfBuf, i);
+    }
     const UniformBufferID lightsBuf = r.createUniformBuffer(1, 64, 8);
 
     // Material.
@@ -77,15 +83,20 @@ bool buildTestScene(SoftwareRenderer &r, TestScene &scene)
     const RenderMaterialInstanceID matInst = r.createMaterialInstance();
     r.setMaterialInstanceMeshLightPercent(matInst, 1.0);
 
-    scene.drawCall.transformBufferID = xfBuf;
-    scene.drawCall.transformIndex = 0;
-    scene.drawCall.positionBufferID = posBuf;
-    scene.drawCall.normalBufferID = nrmBuf;
-    scene.drawCall.texCoordBufferID = uvBuf;
-    scene.drawCall.indexBufferID = idxBuf;
-    scene.drawCall.materialID = mat;
-    scene.drawCall.materialInstID = matInst;
-    scene.drawCall.multipassType = RenderMultipassType::None;
+    scene.drawCalls.resize(STRESS_N);
+    for (int i = 0; i < STRESS_N; i++)
+    {
+        RenderDrawCall &dc = scene.drawCalls[i];
+        dc.transformBufferID = xfBuf;
+        dc.transformIndex = i;
+        dc.positionBufferID = posBuf;
+        dc.normalBufferID = nrmBuf;
+        dc.texCoordBufferID = uvBuf;
+        dc.indexBufferID = idxBuf;
+        dc.materialID = mat;
+        dc.materialInstID = matInst;
+        dc.multipassType = RenderMultipassType::None;
+    }
 
     scene.frameSettings.init(Color(0, 0, 0), 1.0, lightsBuf, 0, 0.0, palTex, lightTex, ditherTex, skyTex, 1, DitheringMode::None);
     printf("escena lista: pos=%d idx=%d mat=%d\n", posBuf, idxBuf, mat);
@@ -97,7 +108,7 @@ void renderTestFrame(SoftwareRenderer &r, const TestScene &scene, double yaw, ui
     RenderCamera cam;
     cam.init(WorldDouble3(-3.0, 1.0, 0.0), yaw, 0.0, 60.0, 320.0 / 200.0, 1.2);
     RenderDrawCommandList list;
-    list.addDrawCalls(Span<const RenderDrawCall>(&scene.drawCall, 1));
+    list.addDrawCalls(Span<const RenderDrawCall>(scene.drawCalls.data(), static_cast<int>(scene.drawCalls.size())));
     r.submitFrame(list, cam, scene.frameSettings, out);
 }
 

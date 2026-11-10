@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <vector>
 #include "Rendering/RenderShaderUtils.h"
 #include "Rendering/RenderTextureUtils.h"
 #include "Rendering/RenderMeshUtils.h"
@@ -14,7 +15,7 @@
 
 struct TestScene
 {
-    RenderDrawCall drawCall;
+    std::vector<RenderDrawCall> drawCalls;
     RenderFrameSettings frameSettings;
 };
 

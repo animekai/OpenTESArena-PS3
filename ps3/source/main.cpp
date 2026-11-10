@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
     SDL_Texture *tex = SDL_CreateTexture(sdl, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, W, H);
     std::vector<uint32_t> out(W * H, 0);
     int frame = 0;
+    Uint32 sumMs = 0, maxMs = 0;
     bool running = true;
     while (running)
     {
@@ -39,12 +40,21 @@ int main(int argc, char *argv[])
         const Uint32 t0 = SDL_GetTicks();
         renderTestFrame(renderer, scene, yaw, out.data());
         const Uint32 t1 = SDL_GetTicks();
+        sumMs += (t1 - t0);
+        if ((t1 - t0) > maxMs) maxMs = (t1 - t0);
 
         SDL_UpdateTexture(tex, nullptr, out.data(), W * 4);
         SDL_RenderClear(sdl);
         SDL_RenderCopy(sdl, tex, nullptr, nullptr);
         SDL_RenderPresent(sdl);
-        if (frame % 30 == 0) printf("frame %d yaw %.0f submitFrame %u ms\n", frame, yaw, (unsigned)(t1 - t0));
+        if (frame % 30 == 29)
+        {
+            int covered = 0;
+            for (int i = 0; i < W * H; i++) if (out[i] != out[0]) covered++;
+            printf("frames %d-%d yaw %.0f: media %.1f ms, max %u ms, pixeles con contenido %d\n",
+                frame - 29, frame, yaw, sumMs / 30.0, (unsigned)maxMs, covered);
+            sumMs = 0; maxMs = 0;
+        }
         frame++;
     }
     return 0;
