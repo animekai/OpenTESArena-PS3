@@ -11,3 +11,7 @@ build/
 juego-original/
 *.bak
 ps3/pruebas/
+pruebas/
+ps3/build_test/
+ps3/*.txt
+ps3/Makefile.*
