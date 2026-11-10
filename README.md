@@ -1,5 +1,8 @@
 # OpenTESArena-PS3
 
+<img width="640" height="480" alt="image" src="https://github.com/user-attachments/assets/be66f3a0-d8c7-4f8f-bdb5-d648caa5f1d0" />
+
+
 Proyecto experimental para llevar **[OpenTESArena](https://github.com/afritz1/OpenTESArena)**, un motor de código abierto para *The Elder Scrolls: Arena* (1994), a la **PlayStation 3** usando el SDK homebrew [PSL1GHT](https://github.com/ps3dev/PSL1GHT).
 
 > **Estado: etapa inicial.** Todavía no se puede jugar. Por ahora se está comprobando, pieza por pieza, qué partes del motor funcionan en la arquitectura de la PS3.
