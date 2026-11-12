@@ -1,60 +1,59 @@
 #include <cstdio>
-#include <string>
+#include <cstdint>
 #include <vector>
 #include <SDL.h>
-#include "components/vfs/manager.hpp"
-#include "frame_test.h"
-#include "Rendering/RenderInitSettings.h"
+
+static const bool USE_SURFACE = false;
+static const int DELAY_MS = 100;
 
 int main(int argc, char *argv[])
 {
     setvbuf(stdout, nullptr, _IONBF, 0);
-    printf("Arena PS3 etapa2: inicio\n");
+    printf("sdltest: inicio surface=%d delay=%d\n", (int)USE_SURFACE, DELAY_MS);
     if (SDL_Init(SDL_INIT_VIDEO) != 0) { printf("SDL_Init fallo\n"); return 1; }
     SDL_Window *window = SDL_CreateWindow("Arena", 0, 0, 1280, 720, 0);
-    SDL_Renderer *sdl = SDL_CreateRenderer(window, -1, 0);
-    VFS::Manager::get().initialize(std::string("/dev_hdd0/ARENA"));
-    printf("VFS ok\n");
-
     constexpr int W = 320, H = 200;
-    SoftwareRenderer renderer;
-    RenderInitSettings init;
-    init.init(nullptr, "", [](const Window*) { return Int2(W, H); }, 1, DitheringMode::None);
-    if (!renderer.init(init)) { printf("renderer.init fallo\n"); return 1; }
-    printf("renderer ok\n");
-
-    TestScene scene;
-    if (!buildTestScene(renderer, scene)) { printf("escena fallo\n"); return 1; }
-
-    SDL_Texture *tex = SDL_CreateTexture(sdl, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, W, H);
     std::vector<uint32_t> out(W * H, 0);
+
+    SDL_Renderer *sdl = nullptr;
+    SDL_Texture *tex = nullptr;
+    SDL_Surface *src = nullptr;
+    if (USE_SURFACE)
+        src = SDL_CreateRGBSurfaceFrom(out.data(), W, H, 32, W * 4, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+    else
+    {
+        sdl = SDL_CreateRenderer(window, -1, 0);
+        tex = SDL_CreateTexture(sdl, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, W, H);
+    }
+
     int frame = 0;
-    Uint32 sumMs = 0, maxMs = 0;
     bool running = true;
     while (running)
     {
         SDL_Event e;
         while (SDL_PollEvent(&e)) if (e.type == SDL_QUIT) running = false;
 
-        const double yaw = (frame % 360) * 1.0;
-        const Uint32 t0 = SDL_GetTicks();
-        renderTestFrame(renderer, scene, yaw, out.data());
-        const Uint32 t1 = SDL_GetTicks();
-        sumMs += (t1 - t0);
-        if ((t1 - t0) > maxMs) maxMs = (t1 - t0);
+        for (int i = 0; i < W * H; i++)
+            out[i] = 0xFF000000u | ((unsigned)((frame * 4) & 255) << 16) | 0x4000u;
 
-        SDL_UpdateTexture(tex, nullptr, out.data(), W * 4);
-        SDL_RenderClear(sdl);
-        SDL_RenderCopy(sdl, tex, nullptr, nullptr);
-        SDL_RenderPresent(sdl);
-        if (frame % 30 == 29)
+        const bool log = (frame % 64 == 0) || (frame >= 250 && frame <= 262);
+        if (log) printf("frame %d\n", frame);
+
+        if (USE_SURFACE)
         {
-            int covered = 0;
-            for (int i = 0; i < W * H; i++) if (out[i] != out[0]) covered++;
-            printf("frames %d-%d yaw %.0f: media %.1f ms, max %u ms, pixeles con contenido %d\n",
-                frame - 29, frame, yaw, sumMs / 30.0, (unsigned)maxMs, covered);
-            sumMs = 0; maxMs = 0;
+            SDL_Surface *ws = SDL_GetWindowSurface(window);
+            SDL_BlitScaled(src, nullptr, ws, nullptr);
+            SDL_UpdateWindowSurface(window);
         }
+        else
+        {
+            SDL_UpdateTexture(tex, nullptr, out.data(), W * 4);
+            SDL_RenderClear(sdl);
+            SDL_RenderCopy(sdl, tex, nullptr, nullptr);
+            SDL_RenderPresent(sdl);
+        }
+        if (log) printf("   ok %d\n", frame);
+        if (DELAY_MS > 0) SDL_Delay(DELAY_MS);
         frame++;
     }
     return 0;

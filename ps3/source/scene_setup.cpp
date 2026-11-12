@@ -64,7 +64,7 @@ bool buildTestScene(SoftwareRenderer &r, TestScene &scene)
     lb = r.lockIndexBuffer(idxBuf); std::memcpy(lb.bytes.begin(), idx, sizeof(idx)); r.unlockIndexBuffer(idxBuf);
 
     // Transformacion (identidad) y buffer de luces (vacio).
-    constexpr int STRESS_N = 200;
+    constexpr int STRESS_N = 10;
     const UniformBufferID xfBuf = r.createUniformBuffer(STRESS_N, sizeof(Matrix4d), alignof(Matrix4d));
     for (int i = 0; i < STRESS_N; i++)
     {
