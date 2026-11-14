@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdio>
 #include <cstdint>
 #include <string>
@@ -24,12 +25,20 @@ int main(int argc, char *argv[])
     if (!buildTestScene(renderer, scene)) { printf("escena fallo\n"); return 1; }
     printf("escena lista\n");
     std::vector<uint32_t> out(W * H, 0);
+    unsigned sumMs = 0, maxMs = 0;
+    int maxCov = 0;
     for (int frame = 0; ; frame++)
     {
         const double yaw = (frame % 360) * 1.0;
+        std::fill(out.begin(), out.end(), 0u);
         const Uint32 t0 = SDL_GetTicks();
         renderTestFrame(renderer, scene, yaw, out.data());
-        const Uint32 t1 = SDL_GetTicks();
+        const unsigned ms = SDL_GetTicks() - t0;
+        sumMs += ms;
+        if (ms > maxMs) maxMs = ms;
+        int cov = 0;
+        for (int i = 0; i < W * H; i += 7) if (out[i] != 0) cov++;
+        if (cov > maxCov) maxCov = cov;
         const int sw = screenWidth(), sh = screenHeight();
         uint32_t *dst = screenBackBuffer();
         for (int y = 0; y < sh; y++)
@@ -38,8 +47,13 @@ int main(int argc, char *argv[])
             uint32_t *drow = dst + y * sw;
             for (int x = 0; x < sw; x++) drow[x] = srow[x * W / sw];
         }
+        if (frame < 360 && frame % 15 == 0) printf("yaw %.0f: %u ms, pantalla cubierta %d%%\n", yaw, ms, cov * 7 * 100 / (W * H));
         screenPresent();
-        if (frame % 60 == 0) printf("frame %d, submitFrame %u ms\n", frame, (unsigned)(t1 - t0));
+        if (frame % 120 == 119)
+        {
+            printf("frames %d-%d: media %.1f ms, max %u ms, cobertura max %d%%\n", frame - 119, frame, sumMs / 120.0, maxMs, maxCov * 7 * 100 / (W * H));
+            sumMs = 0; maxMs = 0; maxCov = 0;
+        }
     }
     return 0;
 }

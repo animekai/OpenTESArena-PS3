@@ -22,7 +22,7 @@ INCLUDES := compat $(ENGINE) $(ENGINE)/OpenTESArena/src $(ENGINE)/OpenTESArena/s
 LIBDIRS  := $(PS3DEV)/portlibs/ppu
 
 CFLAGS   = -O2 -Wall -mcpu=cell $(MACHDEP) $(INCLUDE) -I$(PS3DEV)/portlibs/ppu/include/SDL2
-CXXFLAGS = -ftrivial-auto-var-init=zero -std=gnu++20 -D_GNU_SOURCE -include ps3_compat.h $(CFLAGS)
+CXXFLAGS = -std=gnu++20 -D_GNU_SOURCE -include ps3_compat.h $(CFLAGS)
 LDFLAGS  = $(MACHDEP) -Wl,-Map,$(notdir $@).map
 LIBS     := -lSDL2main -lSDL2 -lrsx -lgcm_sys -lio -laudio -lsysutil -lsysmodule -lrt -llv2 -lm
 

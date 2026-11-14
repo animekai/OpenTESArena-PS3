@@ -98,6 +98,52 @@ bool buildTestScene(SoftwareRenderer &r, TestScene &scene)
         dc.multipassType = RenderMultipassType::None;
     }
 
+    // Caja grande alrededor de la camara: hace de cielo y cubre toda la pantalla.
+    {
+        const double X0 = -23.0, X1 = 17.0, Y0 = -9.0, Y1 = 11.0, Z0 = -20.0, Z1 = 20.0;
+        std::vector<double> bp, bn, bt;
+        std::vector<int> bi;
+        auto quad = [&](std::initializer_list<double> v)
+        {
+            const int base = static_cast<int>(bp.size() / 3);
+            bp.insert(bp.end(), v);
+            for (int i = 0; i < 4; i++) { bn.push_back(0.0); bn.push_back(1.0); bn.push_back(0.0); }
+            const double uvq[8] = { 0, 0, 0, 1, 1, 1, 1, 0 };
+            bt.insert(bt.end(), uvq, uvq + 8);
+            const int qi[6] = { 0, 1, 2, 0, 2, 3 };
+            for (int i = 0; i < 6; i++) bi.push_back(base + qi[i]);
+        };
+        quad({X0,Y1,Z0, X0,Y0,Z0, X0,Y0,Z1, X0,Y1,Z1});
+        quad({X1,Y1,Z0, X1,Y0,Z0, X1,Y0,Z1, X1,Y1,Z1});
+        quad({X0,Y1,Z0, X0,Y0,Z0, X1,Y0,Z0, X1,Y1,Z0});
+        quad({X0,Y1,Z1, X0,Y0,Z1, X1,Y0,Z1, X1,Y1,Z1});
+        quad({X0,Y0,Z0, X0,Y0,Z1, X1,Y0,Z1, X1,Y0,Z0});
+        quad({X0,Y1,Z0, X0,Y1,Z1, X1,Y1,Z1, X1,Y1,Z0});
+        const int vc = static_cast<int>(bp.size() / 3), ic = static_cast<int>(bi.size());
+        const VertexPositionBufferID bPos = r.createVertexPositionBuffer(vc, 3, sizeof(double));
+        const VertexAttributeBufferID bNrm = r.createVertexAttributeBuffer(vc, 3, sizeof(double));
+        const VertexAttributeBufferID bUv = r.createVertexAttributeBuffer(vc, 2, sizeof(double));
+        const IndexBufferID bIdx = r.createIndexBuffer(ic, sizeof(int));
+        LockedBuffer bl = r.lockVertexPositionBuffer(bPos);
+        std::memcpy(bl.bytes.begin(), bp.data(), bp.size() * sizeof(double));
+        r.unlockVertexPositionBuffer(bPos);
+        bl = r.lockVertexAttributeBuffer(bNrm);
+        std::memcpy(bl.bytes.begin(), bn.data(), bn.size() * sizeof(double));
+        r.unlockVertexAttributeBuffer(bNrm);
+        bl = r.lockVertexAttributeBuffer(bUv);
+        std::memcpy(bl.bytes.begin(), bt.data(), bt.size() * sizeof(double));
+        r.unlockVertexAttributeBuffer(bUv);
+        bl = r.lockIndexBuffer(bIdx);
+        std::memcpy(bl.bytes.begin(), bi.data(), bi.size() * sizeof(int));
+        r.unlockIndexBuffer(bIdx);
+        RenderDrawCall box = scene.drawCalls[0];
+        box.positionBufferID = bPos;
+        box.normalBufferID = bNrm;
+        box.texCoordBufferID = bUv;
+        box.indexBufferID = bIdx;
+        scene.drawCalls.insert(scene.drawCalls.begin(), box);
+        printf("caja lista: %d vertices\n", vc);
+    }
     scene.frameSettings.init(Color(0, 0, 0), 1.0, lightsBuf, 0, 0.0, palTex, lightTex, ditherTex, skyTex, 1, DitheringMode::None);
     printf("escena lista: pos=%d idx=%d mat=%d\n", posBuf, idxBuf, mat);
     return true;
@@ -106,7 +152,16 @@ bool buildTestScene(SoftwareRenderer &r, TestScene &scene)
 void renderTestFrame(SoftwareRenderer &r, const TestScene &scene, double yaw, uint32_t *out)
 {
     RenderCamera cam;
-    cam.init(WorldDouble3(-3.0, 1.0, 0.0), yaw, 0.0, 60.0, 320.0 / 200.0, 1.2);
+    cam.init(WorldDouble3(3.0, 1.0, 1.0), yaw, 0.0, 60.0, 320.0 / 200.0, 1.2);
+    static bool once = false;
+    if (!once)
+    {
+        once = true;
+        RenderCamera old;
+        old.init(WorldDouble3(-3.0, 1.0, 0.0), 0.0, 0.0, 60.0, 320.0 / 200.0, 1.2);
+        printf("camara vieja: chunk %d,%d local %.1f,%.1f,%.1f\n", old.chunk.x, old.chunk.y, old.floatingWorldPoint.x, old.floatingWorldPoint.y, old.floatingWorldPoint.z);
+        printf("camara nueva: chunk %d,%d local %.1f,%.1f,%.1f\n", cam.chunk.x, cam.chunk.y, cam.floatingWorldPoint.x, cam.floatingWorldPoint.y, cam.floatingWorldPoint.z);
+    }
     RenderDrawCommandList list;
     list.addDrawCalls(Span<const RenderDrawCall>(scene.drawCalls.data(), static_cast<int>(scene.drawCalls.size())));
     r.submitFrame(list, cam, scene.frameSettings, out);

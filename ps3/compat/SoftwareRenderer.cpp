@@ -1,4 +1,3 @@
-int g_srTrace = 0;
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -3747,19 +3746,13 @@ namespace
 				ClippingOutputCache &clippingOutputCache = worker.clippingOutputCache;
 				RasterizerInputCache &rasterizerInputCache = worker.rasterizerInputCache;
 
-				if (g_srTrace) printf("[sr] ProcessMeshBufferLookups\n");
 				ProcessMeshBufferLookups(drawCallCache, vertexShaderInputCache);
-				if (g_srTrace) printf("[sr] CalculateVertexShaderTransforms\n");
 				CalculateVertexShaderTransforms(transformCache);
-				if (g_srTrace) printf("[sr] ProcessVertexShaders\n");
 				ProcessVertexShaders(drawCallCache.vertexShaderType, transformCache, vertexShaderInputCache, vertexShaderOutputCache);
-				if (g_srTrace) printf("[sr] ProcessClipping\n");
 				ProcessClipping(drawCallCache, vertexShaderOutputCache, clippingOutputCache);
-				if (g_srTrace) printf("[sr] ProcessClipSpaceTrianglesForBinning\n");
 				ProcessClipSpaceTrianglesForBinning(drawCallIndex, drawCallCache.enableBackFaceCulling, clippingOutputCache, rasterizerInputCache);
 			}
 
-			if (g_srTrace) printf("[sr] fin draw calls\n");
 			// Clear screen before rasterization sync as frame buffer rows are faster than bin rows.
 			if (worker.shouldClearFrameBuffer)
 			{
@@ -3776,7 +3769,6 @@ namespace
 				std::fill(depthBufferClearStart, depthBufferClearEnd, Constants::Infinity);
 			}
 
-			if (g_srTrace) printf("[sr] light bins\n");
 			// Populate light bins associated with this worker.
 			const int lightBinCountX = g_lightBins.getWidth();
 			const int lightBinCountY = g_lightBins.getHeight();
@@ -3814,9 +3806,7 @@ namespace
 							DebugAssertIndex(geometryWorker.drawCallCaches, workerDrawCallIndex);
 							const DrawCallCache &drawCallCache = geometryWorker.drawCallCaches[workerDrawCallIndex];
 							const RasterizerInputCache &rasterizerInputCache = geometryWorker.rasterizerInputCache;
-							if (g_srTrace) printf("[sr] RasterizeMesh bin %d,%d\n", binX, binY);
 							RasterizeMesh(drawCallCache, rasterizerInputCache, geometryWorkerBin, binEntry, binX, binY, workItem.binIndex);
-							if (g_srTrace) printf("[sr] fin RasterizeMesh\n");
 						}
 					}
 				}
@@ -4595,7 +4585,7 @@ void SoftwareRenderer::submitFrame(const RenderDrawCommandList &commandList, con
 				g_totalPresentedTriangleCount += worker.rasterizerInputCache.triangleCount;
 			}
 
-			for (int wi = 0; wi < totalWorkerCount; wi++) { WorkerRasterPhase(wi); } if (g_srTrace) printf("[sr] fin fase raster\n");
+			for (int wi = 0; wi < totalWorkerCount; wi++) { WorkerRasterPhase(wi); }
 
 			// Reset workers for next frame.
 			for (Worker &worker : g_workers)
